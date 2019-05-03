@@ -1,11 +1,25 @@
-import CarimbaCertificado
+import Carimba
 import wx.adv
 import wx
 #Import realizado para utilizar a funcao Sleep
 import time
 
-TRAY_TOOLTIP = 'Carimba Certificado Jatinox' 
-TRAY_ICON = 'carimbador.png' 
+#Imports do projeto
+import src
+
+#Carregando Configuraçoes
+global settings 
+settings = src.Settings.config()
+global refresh 
+refresh = False
+global wait 
+wait = settings[1]
+
+global TRAY_ICON 
+TRAY_ICON = settings[3] #Obtem imagem para colocar como icone.
+
+
+TRAY_TOOLTIP = settings[2] #Obtem o nome que vai ficar no icone
 
 
 def create_menu_item(menu, label, func):
@@ -15,23 +29,28 @@ def create_menu_item(menu, label, func):
     return item
 
 
-class TaskBarIcon(wx.adv.TaskBarIcon):
+class TaskBarIcon(wx.adv.TaskBarIcon, wx.Frame):
+
     def __init__(self, frame):
+        print('Carimba Certificados')
         self.frame = frame
         super(TaskBarIcon, self).__init__()
         self.set_icon(TRAY_ICON)
         self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
-
 
 
 
     def CreatePopupMenu(self):
         menu = wx.Menu()
-        create_menu_item(menu, 'Iniciar', self.on_start)
-        create_menu_item(menu, 'Parar', self.on_stop)
+        if app.status:
+            create_menu_item(menu, 'Stop', self.on_stop)
+        else:
+            create_menu_item(menu, 'Start', self.on_start)
+            
         menu.AppendSeparator()
-        create_menu_item(menu, 'Sair', self.on_exit)
+        create_menu_item(menu, 'Config Refresh', self.on_refresh)
+        menu.AppendSeparator()
+        create_menu_item(menu, 'Exit', self.on_exit)
         return menu
 
     def set_icon(self, path):
@@ -42,28 +61,31 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         app.count = 0
         print ('Tray icon foi clicado')
 
-    def OnIdle(self, event):
-        print ('onidle')
-        self.idleCtrl.SetValue(str(self.count))
-        self.count = self.count + 1
-
-    def OnCloseWindow(self, event):
-        app.keepGoing = False
-        self.Destroy()
-
-
     def on_stop(self, event):
-        app.STATUS_CARIMBA = False
+        app.status = False
         print ('Stop')
 
     def on_start(self, event):
         print ('Start')
-        app.STATUS_CARIMBA = True
+        app.status = True
+
+    def on_refresh(self, event):
+        global refresh
+        global wait
+        global settings
+        print('Refresh')
+        settings = src.Settings.config()
+        wait = settings[1]
+
+        refresh = False
+        app.refresh = True
+      
 
 
     def on_exit(self, event):
         wx.CallAfter(self.Destroy)
         self.frame.Close()
+        app.keepGoing = False
 
 class App(wx.App):
     def MainLoop(self):
@@ -83,16 +105,17 @@ class App(wx.App):
                 evtloop.Dispatch()
 
             time.sleep(0.10)
-            evtloop.ProcessIdle()
+            #evtloop.ProcessIdle()
 
             self.count = self.count + 1
                    
             #PARA FICAR O TEMPO TODO VERIFICANDO POR NOVOS ARQUIVOS E CARIMBANDO
-            if (self.STATUS_CARIMBA): # LOOP infinito para manter o programa sempre rodando.
-                if self.count > 50:
-                    print ('Executando...') # Exibi para o usuario o andamento do programa.
-                    CarimbaCertificadoV9.main() 
-                    self.count = 0
+            #if (self.STATUS_CARIMBA): # LOOP infinito para manter o programa sempre rodando.
+            if self.count > int(wait):
+                print('Carimbando....')
+                Carimba.main(settings) 
+                print('Acabou...')
+                self.count = 0
             wx.EventLoop.SetActive(old)
 
 
@@ -103,11 +126,10 @@ class App(wx.App):
         TaskBarIcon(frame)
         self.keepGoing = True
         self.count = 0
-        self.STATUS_CARIMBA = True
+        self.status = True
         return True
 
 
 app = App(False)
 app.MainLoop()
-
 

@@ -136,7 +136,6 @@ class Carimbador(object):
 
 
 	def percorrer(path):
-
 		filearrays = { '.pdf':[],'-C.pdf':[], 'lotes':[]} # Cria um array de variaveis para armazenar documentos suportados.
 		for root, dirs, files in os.walk(path): #Funcao recursiva que percore as pastas apartir de um caminho.
 			for file in files: #Obtem um arquivo do array de arquivos encontrados na funcao os.walk
@@ -148,4 +147,6 @@ class Carimbador(object):
 							filearrays[fileext].append(os.path.join(root,file)) #Grava na variavel filearrays com extensão correspondente.
 						else:
 							filearrays['-C.pdf'].append(os.path.join(root,file)) #Grava na variavel filearrays com extensão '-C.pdf'
+		
+		#print(filearrays['-C.pdf'])
 		return filearrays # Retorno a lista de filearrays categorizados por extensao .pdf ou -C.pdf e seus respectivos nomes na variavel lote.
