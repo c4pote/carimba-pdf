@@ -29,9 +29,10 @@ path = 'B:\\MATRIZ\\CERTIFICADOS'
 #path = 'C:\\Users\\gustavo.lima\\Desktop\\CERTIFICADOS'
 
 debug=False
-'''
-#DESATIVADO
+
 #logo = ImageReader('C:\\Users\\gustavo.lima\\Desktop\\CERTIFICADOS\\logo.png')
+logo = ImageReader('logo.png')
+
 
 #Redimensiona Imagem
 def get_image(path, width=1*cm):
@@ -39,7 +40,7 @@ def get_image(path, width=1*cm):
 	iw, ih = img.getSize()
 	aspect = ih / float(iw)
 	return Image(path, width=width, height=(width * aspect))
-'''
+
 
 #para tratar o lote deixando ele visualmente melhor e removendo informacoes que nao utilizamos para lote.
 def tratalote(lotesemtratar):
@@ -83,6 +84,10 @@ def moverarquivo(arquivoorigem):
 
 
 def carimbaPDF(arquivoorigem,line1,line2):
+
+	#Controla se vai usar o logotipo ou as duas linhas de parametro de entrada no carimbo.
+	usa_logotipo = True
+
 	arquivo = (os.path.split(arquivoorigem)) #Ex arquivoorigem = c:\certificado\BN\arquivo.pdf entao arquivo vai receber no primeiro array 'c:\certificado\BN\' e no segundo 'arquivo.pdf'
 	diretorio= arquivo[0]
 	arquivo = (os.path.splitext(arquivo[1])) #Utilizando o mesmo ex acima aqui receber no primeiro array 'arquivo' e no segundo '.pdf'
@@ -97,50 +102,58 @@ def carimbaPDF(arquivoorigem,line1,line2):
 	can.setFont("Helvetica", 15)
 	# Mudar cor da Moldura para Perto
 	can.setStrokeColorRGB(0,0,0)
-	can.setFillColor(Color(255,255,255, alpha=0.3))
-	#can.setFillColorRGB(1,0,1)
-
-	# Desenhando linha que separa o lote das observacoes
-	# can.line(-0.66*inch,-0.69*inch,-0.66*inch,0.8*inch)
-
+	
 	# Desenhando Retangulo para parecer um carimbo
-	#can.rect(-0.94*inch,-0.7*inch,0.6*inch,1.5*inch, fill=1)
 	# CASO NAO TENHA A INFORMACAO NA LINHA 2 O RETANGULO VAI SER REDUZIDO.
-	if line2 == "":
+	if usa_logotipo:
+		#Retangulo para LOGO
+		# FUNDO BRANCO TRANSPARENTE COM BORTA PRETA
+		can.setFillColor(Color(255,255,255, alpha=0.5))
+		can.rect(-0.94*inch,-0.7*inch,0.7*inch,1.5*inch, fill=1)
+		#REMOVENDO A TRANSPARENCIA.
+		can.setFillColor(Color(255,255,255, alpha=1))
+		line2 = '' # REMOVENDO INFORMACAO DAS LINHAS POIS O LOGOTIPO VAI UTILIZAR O ESPACO DESTINADO A ESSE RECURSO QUANDO HABILITADO
+		
+		# Desenhando linha que separa o lote do Logo
+		can.line(-0.73*inch,-0.7*inch,-0.73*inch,0.8*inch)
+		
+		# Desenhando linha que separa logo da linha 1
+		can.line(-0.73*inch,-7,-0.23*inch,-7)
+		
+	elif line2 == "":
+		#Retangulo para quando a linha 2 esta nula
 		can.rect(-0.94*inch,-0.7*inch,0.4*inch,1.5*inch, fill=1)
 	else:
+		#Retangulo quando a linha 2 foi preenchida e nao vai usar logo.
 		can.rect(-0.94*inch,-0.7*inch,0.6*inch,1.5*inch, fill=1)
 
 	# Rotacionando carimbo para utilizar a margem e nao sobrepor muito os dados do documento
 	can.rotate(90)
+
 	# Mudando a Cor do texto para Azul e removendo transparencia.
 	can.setFillColor(Color(0,0,0.77, alpha=1))
 	
 	# Dados do Carimbo
 	can.drawString(-0.60*inch,  0.76 *inch,  '{: >12}'.format(tratalote(lote)))
-	can.drawString(-0.78*inch,  0.58 *inch, '{: >14}'.format(line1))
+	#can.drawString(-0.78*inch,  0.58 *inch, '{: >14}'.format(line1))
+	
+	can.drawString(-0.49*inch,  0.40 *inch, '{: >14}'.format(line1))
 	can.drawString(-0.68*inch,  0.38 *inch, '{: >14}'.format(line2))
 
-
-	'''
-	DESABILITADO LOGOTIPO POIS SEGUNDO O RAFAEL E RAUL NAO EXISTE GANHO PARA MARCA COLOCAR O LOGO NO CERTIFICADO
-	PELO CONTRARIO ALGUMA REVENDA PODE PEGAR O CERTIFICADO E USAR PARA ENTREGAR PARA ALGUM CLIENTE QUE VENHA TER PROBLEMA E AI VAO RELACIONAR O 
-	PROBLEMA A MARCA JATINOX. O CODIGO VAI CONTINUAR PARA EXEMPLO MAS POSSIVELMENTE NAO VAI TER LOGO
-	'''
-
 	#ADD LOGO JATINOX
-	''''
-	frame = Frame(-0.96*inch, -1.26 *inch, 5*cm, 5*cm, showBoundary=0)
-	story = []
-	#Redimensionando Imagem do LOGO JATINOX para 2cm mantendo proporção
-	story.append(get_image('logo.png', width=1.4*cm))
-	frame.addFromList(story, can)
-	#can.drawImage(logo, -0.66*inch, -1.3 *inch, mask='auto')
-	'''
+	if usa_logotipo:
+		#LOGO CENTRALIZADO
+		#frame = Frame(-0.96*inch, -1.19 *inch, 5*cm, 5*cm, showBoundary=0)
+		#LOGO ALINHADO A ESQUERDA
+		frame = Frame(-1.38*inch, -1.19 *inch, 5*cm, 5*cm, showBoundary=0)
+		story = []
+		#Redimensionando Imagem do LOGO JATINOX para 2cm mantendo proporção
+		story.append(get_image('logo.png', width=1.4*cm))
+		frame.addFromList(story, can)
 
     #Adicionando Autoria e Titulo
-	#can.setAuthor("JATINOX")
-	#can.setTitle("CERTIFICADO JATINOX")
+	can.setAuthor("JATINOX")
+	can.setTitle("CERTIFICADO JATINOX")
 
 
 	can.save() 
@@ -204,12 +217,18 @@ def main():
 		arquivoscarimbar = percorrer() #Carrega a listagem de arquivos para carimbar em um array
 		for arqcarimbar in arquivoscarimbar['.pdf']: #For para percorrer os arquivos que vao ser carimbados.
 			#carimbaPDF(arqcarimbar,"Numero", "Rastreabilidade") #Chamando funcao que carimba os documentos.
+			print('Carimbando Certificados')
 			carimbaPDF(arqcarimbar,"NR","") #Chamando funcao que carimba os documentos.
 			try:
+				print('Movendo Certificado Original para pasta Origem')
 				moverarquivo(arqcarimbar) # Chamando funcao que move o arquivo original para pasta correta.
 			except:
 				print ('O arquivo abaixo está sendo utilizado por outro usuário e será movido assim que fechar o arquivo')
 				print(arqcarimbar)
+		#Liberando a memoria que foi carregada com os caminhos dos arquivos encontrado.
+		arquivoscarimbar = ''				
+		
+		print ('Execução {} realizada com sucesso. Aguardando 60 segundos para uma próxima execução'.format(str(execucoes))) 
 		time.sleep(60) # AGUARDA 60 SEGUNDOS ANTES DE REINICIAR O PROGRAMA
 
 if __name__ == "__main__":
